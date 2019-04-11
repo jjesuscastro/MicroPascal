@@ -308,8 +308,13 @@ public class MicroPascal {
                         
                     if(currToken.getText().equals(")")){ //end of write
                         currToken = tokensQueue.remove();
-                        flag=false; //stop na sis
-                    }
+                        if(currToken.getText().equals(";")){
+                            currToken = tokensQueue.remove();
+                            flag=false; //stop na sis
+                        }else
+                            ThrowError(currToken, ";");
+                    }else
+                        ThrowError(currToken, ";");
                 }
             }
         }
@@ -320,20 +325,43 @@ public class MicroPascal {
 
         if(currToken.getText().equals("(")){
             currToken = tokensQueue.remove();
-           if(CheckInt(currToken) | currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
+           if(currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
                currToken = tokensQueue.remove();
                
                boolean flag=true;
                while(flag){
                         
-                    if(currToken.getText().equals(")")){ //end of write
+                    if(currToken.getText().equals(")")){ //end of write( string here );
                         currToken = tokensQueue.remove();
-                        flag=false; //stop na sis
-                    }
+                        if(currToken.getText().equals(";")){
+                            currToken = tokensQueue.remove();
+                            flag=false; //stop na sis
+                             System.out.println();
+                        }else
+                            ThrowError(currToken, ";");
+                    }else
+                        ThrowError(currToken, ";");
                 }
+            }else{
+               if(CheckInt(currToken))
+                   currToken = tokensQueue.remove();
+                }
+        }else{
+            if(currToken.getText().equals(")")){ //end of writeln();
+                currToken = tokensQueue.remove();   
+                if(currToken.getText().equals(";")){
+                    currToken = tokensQueue.remove(); 
+                     System.out.println();
+                }else
+                    ThrowError(currToken, ";");
+            }else{
+                if(currToken.getText().equals(";")){
+                        currToken = tokensQueue.remove();
+                        System.out.println(); 
+                }else
+                    ThrowError(currToken, ";");
             }
         }
-        System.out.println(); 
     }
     
 
