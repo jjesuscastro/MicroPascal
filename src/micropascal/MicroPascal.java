@@ -25,6 +25,9 @@ public class MicroPascal {
         List tokens = Tokenize(args[0]);
         Queue<Token> tokensQueue = new LinkedList<>(tokens);
         
+//        for(int i = 0; i < tokens.size(); i++)
+//            System.out.println(((Token)tokens.get(i)).getText());
+        
         checkHeader(tokensQueue);
     }
     
@@ -38,6 +41,9 @@ public class MicroPascal {
             pascalLexer lexer = new pascalLexer(input);
             CommonTokenStream tempTokens = new CommonTokenStream(lexer);
             tempTokens.fill();
+//            pascalParser parser = new pascalParser(tempTokens);
+//            ParseTree tree = parser.program();
+//            System.out.println(tree.toStringTree(parser));
             
             fis.close();
             return tempTokens.getTokens();
@@ -59,6 +65,83 @@ public class MicroPascal {
         return null;
     }
     
+    static void Parse(Queue<Token> tokensQueue) {
+        Token currToken = tokensQueue.remove();
+        
+        if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
+            System.out.println("call write/writeln function");
+        else if(currToken.getText().equals("readln"))
+            System.out.println("call readln function");
+        else if(currToken.getText().equals("for"))
+            ForLoop(tokensQueue, currToken);
+        else
+            ThrowError(currToken);
+        
+        
+    }
+    
+    static void ForLoop(Queue<Token> tokensQueue, Token incomingToken) {
+        Token currToken = tokensQueue.remove();
+        
+        CheckReservedWords(currToken); //The token after "for" should be an identifier and therefor should not be a reserved word.
+        
+        currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals(":="))
+            ThrowError(currToken, ":=");
+        
+        currToken = tokensQueue.remove();
+        
+        boolean isStartNegative = false;
+        if(currToken.getText().equals("-")) {
+            isStartNegative = true;
+            currToken = tokensQueue.remove();
+        }
+        
+        int startValue = Integer.MAX_VALUE;
+        if(!CheckInt(currToken))
+            ThrowError(currToken, "integer");
+        else
+            startValue = isStartNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
+        
+        currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals("to"))
+            ThrowError(currToken, "to");
+        
+        currToken = tokensQueue.remove();
+        
+        boolean isEndNegative = false;
+        if(currToken.getText().equals("-")) {
+            isEndNegative = true;
+            currToken = tokensQueue.remove();
+        }
+        
+        int endValue = Integer.MAX_VALUE;
+        if(!CheckInt(currToken))
+            ThrowError(currToken, "integer");
+        else
+            endValue = isEndNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
+        
+        currToken = tokensQueue.remove();
+        if(!currToken.getText().equals("do"))
+            ThrowError(currToken, "do");
+        
+        currToken = tokensQueue.remove();
+        if(currToken.getText().equals("begin"))
+            Parse(tokensQueue);
+        else
+            ThrowError(currToken, "begin");
+        
+        currToken = tokensQueue.remove();
+        if(!currToken.getText().equals("end"))
+            ThrowError(currToken, "end");
+        
+        currToken = tokensQueue.remove();
+        if(!currToken.getText().equals(";"))
+            ThrowError(currToken, ";");
+    }
+    
     static void checkHeader(Queue<Token> tokensQueue) {
         Token currToken = tokensQueue.remove();
         if(currToken.getText().equals("program"))
@@ -68,8 +151,10 @@ public class MicroPascal {
             currToken = tokensQueue.remove();
             if(!currToken.getText().equals(";"))
                 ThrowError(currToken, ";");
+            
+            checkHeader(tokensQueue);
         } else if (currToken.getText().equals("begin")) {
-            System.out.println("nice ulit");
+            Parse(tokensQueue);
         } else {
             ThrowError(currToken,"begin");
         }
@@ -195,5 +280,9 @@ public class MicroPascal {
         
         if(reservedWords.contains(token.getText()))
             ThrowError(token);
+    }
+    
+    static boolean CheckInt(Token token) {
+        return token.getText().matches("\\-?\\d+");  //match a number with optional '-' and decimal.
     }
 }

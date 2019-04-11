@@ -1,15 +1,19 @@
 program helloworld;
 
 begin
-    writeChar('H');
-    writeChar('e');
-    writeChar('l');
-    writeChar('l');
-    writeChar('o');
-    writeChar(' ');
-    writeChar('W');
-    writeChar('o');
-    writeChar('r');
-    writeChar('l');
-    writeChar('d')
+    for i := -1 to 10 do
+    begin
+        write('hi');
+    end;
+    write(2);
+    write('H');
+    write('e');
+    write('ll');
+    write('o');
+    write(' ');
+    write('W');
+    write('o');
+    write('r');
+    write('l');
+    write(d)
 end.
