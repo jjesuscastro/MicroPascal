@@ -69,24 +69,31 @@ public class MicroPascal {
         Token currToken = tokensQueue.remove();
         
         if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
-            System.out.println("call write/writeln function");
+            Write(tokensQueue, currToken);
         else if(currToken.getText().equals("readln"))
             System.out.println("call readln function");
         else if(currToken.getText().equals("for"))
             ForLoop(tokensQueue, currToken);
         else if(currToken.getText().equals("if"))
             IfStatement(tokensQueue, currToken);
-        else
-            ThrowError(currToken);
-        
-        
+    }
+    
+    static void Parse(Queue<Token> tokensQueue, Token currToken) {        
+        if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
+            Write(tokensQueue, currToken);
+        else if(currToken.getText().equals("readln"))
+            System.out.println("call readln function");
+        else if(currToken.getText().equals("for"))
+            ForLoop(tokensQueue, currToken);
+        else if(currToken.getText().equals("if"))
+            IfStatement(tokensQueue, currToken);
     }
     
     static void IfStatement(Queue<Token> tokensQueue, Token incomingToken) {
         Token currToken = tokensQueue.remove();
         
         if(!currToken.getText().endsWith("("))
-            ThrowError(currToken, "(");
+            ThrowError(currToken, "IfStatement", "(");
     }
     
     static void ForLoop(Queue<Token> tokensQueue, Token incomingToken) {
@@ -97,7 +104,7 @@ public class MicroPascal {
         currToken = tokensQueue.remove();
         
         if(!currToken.getText().equals(":="))
-            ThrowError(currToken, ":=");
+            ThrowError(currToken, "ForLoop", ":=");
         
         currToken = tokensQueue.remove();
         
@@ -109,14 +116,14 @@ public class MicroPascal {
         
         int startValue = Integer.MAX_VALUE;
         if(!CheckInt(currToken))
-            ThrowError(currToken, "integer");
+            ThrowError(currToken, "ForLoop", "integer");
         else
             startValue = isStartNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
         
         currToken = tokensQueue.remove();
         
         if(!currToken.getText().equals("to"))
-            ThrowError(currToken, "to");
+            ThrowError(currToken, "ForLoop", "to");
         
         currToken = tokensQueue.remove();
         
@@ -128,27 +135,101 @@ public class MicroPascal {
         
         int endValue = Integer.MAX_VALUE;
         if(!CheckInt(currToken))
-            ThrowError(currToken, "integer");
+            ThrowError(currToken, "ForLoop", "integer");
         else
             endValue = isEndNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals("do"))
-            ThrowError(currToken, "do");
+            ThrowError(currToken, "ForLoop", "do");
         
+        Queue<Token> tempQueue = new LinkedList<>();
         currToken = tokensQueue.remove();
-        if(currToken.getText().equals("begin"))
-            Parse(tokensQueue);
-        else
-            ThrowError(currToken, "begin");
+        if(currToken.getText().equals("begin")) {
+            while(!tokensQueue.peek().getText().equals("end")) {
+                tempQueue.add(tokensQueue.remove());
+            }
+        }
+        else {
+            ThrowError(currToken, "ForLoop", "begin");
+        }
+        
+        Queue<Token> loopQueue = new LinkedList<>();
+        for(int i = startValue; i < endValue; i++){
+            for(int j = 0; j < tempQueue.toArray().length; j++){
+                loopQueue.add((Token)tempQueue.toArray()[j]);
+            }
+        }
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals("end"))
-            ThrowError(currToken, "end");
+            ThrowError(currToken, "ForLoop", "end");
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals(";"))
-            ThrowError(currToken, ";");
+            ThrowError(currToken, "ForLoop", ";");
+        
+        Parse(ConcatenateQueue(loopQueue, tokensQueue));
+    }
+    
+    static void Write(Queue<Token> tokensQueue, Token incomingToken) {
+        Token currToken = tokensQueue.remove();
+        if (!currToken.getText().equals("(")) {
+            ThrowError(currToken, "Write", "(");
+        }
+
+        currToken = tokensQueue.remove();
+        String print = null;
+
+        if (currToken.getText().equals(")")) {
+            print = "";
+
+            currToken = tokensQueue.remove();
+            if (!currToken.getText().endsWith(";")) {
+                ThrowError(currToken, "Write", ";");
+            }
+
+            System.out.print(print);
+
+            if (incomingToken.getText().equals("writeln")) {
+                System.out.println();
+            }
+
+            return;
+        } else if (CheckInt(currToken)) {
+            print = currToken.getText();
+        } else if (currToken.getText().charAt(0) == '\'') {
+            StringBuilder currString = new StringBuilder(currToken.getText());
+
+            if (currString.charAt(currString.length() - 1) != '\'') {
+                ThrowError(currToken);
+            } else {
+                currString.deleteCharAt(0);
+                currString.deleteCharAt(currString.length() - 1);
+            }
+
+            print = currString.toString();
+        } else {
+            ThrowError(currToken, "Write", ")");
+        }
+
+        currToken = tokensQueue.remove();
+        if (!currToken.getText().endsWith(")")) {
+            ThrowError(currToken, "Write", ")");
+        }
+
+        currToken = tokensQueue.remove();
+        if (!currToken.getText().endsWith(";")) {
+            ThrowError(currToken, "Write", ";");
+        }
+
+        System.out.print(print);
+
+        if (incomingToken.getText().equals("writeln")) {
+            System.out.println();
+        }
+
+        Parse(tokensQueue);
     }
     
     static void checkHeader(Queue<Token> tokensQueue) {
@@ -176,6 +257,11 @@ public class MicroPascal {
     
     static void ThrowError(Token token, String expected) {
         System.out.println("syntax error at line " + token.getLine() + " expected '" + expected + "' found '" + token.getText() + "'");
+        System.exit(0);
+    }
+    
+    static void ThrowError(Token token, String function, String expected) {
+        System.out.println("syntax error at line " + token.getLine() + " in funcion " + function + " expected '" + expected + "' found '" + token.getText() + "'");
         System.exit(0);
     }
     
@@ -295,46 +381,16 @@ public class MicroPascal {
         return token.getText().matches("\\-?\\d+");  //match a number with optional '-' and decimal.
     }
     
-    static void write(Queue<Token> tokensQueue){
-        Token currToken = tokensQueue.remove();
-
-        if(currToken.getText().equals("(")){
-            currToken = tokensQueue.remove();
-           if(CheckInt(currToken) | currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
-               currToken = tokensQueue.remove();
-               
-               boolean flag=true;
-               while(flag){
-                        
-                    if(currToken.getText().equals(")")){ //end of write
-                        currToken = tokensQueue.remove();
-                        flag=false; //stop na sis
-                    }
-                }
-            }
-        }
+    static Queue<Token> ConcatenateQueue(Queue<Token> newQueue, Queue<Token> oldQueue) {
+        List tokens = new ArrayList<Token>();
+        
+        
+        for(int i = 0; i < newQueue.toArray().length; i++)
+            tokens.add(newQueue.toArray()[i]);
+        
+        for(int i = 0; i < oldQueue.toArray().length; i++)
+            tokens.add(oldQueue.toArray()[i]);
+        
+        return new LinkedList<>(tokens);
     }
-    
-    static void writeln(Queue<Token> tokensQueue){
-        Token currToken = tokensQueue.remove();
-
-        if(currToken.getText().equals("(")){
-            currToken = tokensQueue.remove();
-           if(CheckInt(currToken) | currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
-               currToken = tokensQueue.remove();
-               
-               boolean flag=true;
-               while(flag){
-                        
-                    if(currToken.getText().equals(")")){ //end of write
-                        currToken = tokensQueue.remove();
-                        flag=false; //stop na sis
-                    }
-                }
-            }
-        }
-        System.out.println(); 
-    }
-    
-
 }
