@@ -74,10 +74,19 @@ public class MicroPascal {
             System.out.println("call readln function");
         else if(currToken.getText().equals("for"))
             ForLoop(tokensQueue, currToken);
+        else if(currToken.getText().equals("if"))
+            IfStatement(tokensQueue, currToken);
         else
             ThrowError(currToken);
         
         
+    }
+    
+    static void IfStatement(Queue<Token> tokensQueue, Token incomingToken) {
+        Token currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().endsWith("("))
+            ThrowError(currToken, "(");
     }
     
     static void ForLoop(Queue<Token> tokensQueue, Token incomingToken) {
