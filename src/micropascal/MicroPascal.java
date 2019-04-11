@@ -5,7 +5,6 @@
  */
 package micropascal;
 
-import grammar.pascal.pascalLexer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -15,6 +14,7 @@ import java.util.Queue;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import pascal.pascalLexer;
 
 /**
  *

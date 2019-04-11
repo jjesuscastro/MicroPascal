@@ -1,5 +1,5 @@
 // Generated from pascal.g4 by ANTLR 4.7.2
-package grammar.pascal;
+package pascal;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
