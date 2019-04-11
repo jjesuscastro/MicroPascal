@@ -285,4 +285,47 @@ public class MicroPascal {
     static boolean CheckInt(Token token) {
         return token.getText().matches("\\-?\\d+");  //match a number with optional '-' and decimal.
     }
+    
+    static void write(Queue<Token> tokensQueue){
+        Token currToken = tokensQueue.remove();
+
+        if(currToken.getText().equals("(")){
+            currToken = tokensQueue.remove();
+           if(CheckInt(currToken) | currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
+               currToken = tokensQueue.remove();
+               
+               boolean flag=true;
+               while(flag){
+                        
+                    if(currToken.getText().equals(")")){ //end of write
+                        currToken = tokensQueue.remove();
+                        flag=false; //stop na sis
+                    }
+                }
+            }
+        }
+    }
+    
+    static void writeln(Queue<Token> tokensQueue){
+        Token currToken = tokensQueue.remove();
+
+        if(currToken.getText().equals("(")){
+            currToken = tokensQueue.remove();
+           if(CheckInt(currToken) | currToken.getText().equals("'") | currToken.getText().equals(" \" ")){
+               currToken = tokensQueue.remove();
+               
+               boolean flag=true;
+               while(flag){
+                        
+                    if(currToken.getText().equals(")")){ //end of write
+                        currToken = tokensQueue.remove();
+                        flag=false; //stop na sis
+                    }
+                }
+            }
+        }
+        System.out.println(); 
+    }
+    
+
 }
