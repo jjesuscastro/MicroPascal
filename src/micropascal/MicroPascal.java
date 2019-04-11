@@ -21,12 +21,54 @@ import pascal.pascalLexer;
  * @author jjoes
  */
 public class MicroPascal {
+    static List variables = new ArrayList<Variable>();
+    
+    static class Variable {
+        private String name = null, value = null, type = null;
+        
+        public Variable(String name, String type, String value) {
+            this.name = name;
+            this.type = type;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+    
     public static void main(String[] args) {
         List tokens = Tokenize(args[0]);
         Queue<Token> tokensQueue = new LinkedList<>(tokens);
         
-//        for(int i = 0; i < tokens.size(); i++)
-//            System.out.println(((Token)tokens.get(i)).getText());
+        for(int i = 0; i < tokens.size(); i++)
+            System.out.println(((Token)tokens.get(i)).getText());
+        
+        /*
+            0 :  name
+            1 : type
+            2: value
+        */
         
         checkHeader(tokensQueue);
     }
@@ -68,6 +110,14 @@ public class MicroPascal {
     static void Parse(Queue<Token> tokensQueue) {
         Token currToken = tokensQueue.remove();
         
+        Trace(tokensQueue, currToken);
+    }
+    
+    static void Parse(Queue<Token> tokensQueue, Token currToken) {        
+        Trace(tokensQueue, currToken);
+    }
+    
+    static void Trace(Queue<Token> tokensQueue, Token currToken) {        
         if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
             Write(tokensQueue, currToken);
         else if(currToken.getText().equals("readln"))
@@ -78,15 +128,47 @@ public class MicroPascal {
             IfStatement(tokensQueue, currToken);
     }
     
-    static void Parse(Queue<Token> tokensQueue, Token currToken) {        
-        if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
-            Write(tokensQueue, currToken);
-        else if(currToken.getText().equals("readln"))
-            System.out.println("call readln function");
-        else if(currToken.getText().equals("for"))
-            ForLoop(tokensQueue, currToken);
-        else if(currToken.getText().equals("if"))
-            IfStatement(tokensQueue, currToken);
+    static void VariableAssignments(Queue<Token> tokensQueue) {
+        Token currToken;
+        String name, value, type;
+        while(!tokensQueue.peek().getText().equals("begin")) {
+            name = null;
+            value = null;
+            type = null;
+            
+            currToken = tokensQueue.remove();
+            CheckReservedWords(currToken);
+            name = currToken.getText();
+            
+            currToken = tokensQueue.remove();
+            if(!currToken.getText().equals(":"))
+                ThrowError(currToken, "VariableAssignment", ":");
+            
+            currToken = tokensQueue.remove();
+            CheckType(currToken);
+            type = currToken.getText();
+            
+            currToken = tokensQueue.remove();
+            if(currToken.getText().equals("=")) {
+                currToken = tokensQueue.remove();
+                value = currToken.getText();
+                
+                System.out.println("currToken = " + currToken.getText());
+                
+                currToken = tokensQueue.remove();
+                if(currToken.getText().equals(";")) {
+                    continue;
+                } else {
+                    ThrowError(currToken, "VariableAssignment", ";");
+                }
+            } else if(currToken.getText().equals(";")) {
+                continue;
+            } else {
+                ThrowError(currToken, "VariableAssignment", ";");
+            }
+            
+            variables.add(new Variable(name, type, value));
+        }
     }
     
     static void IfStatement(Queue<Token> tokensQueue, Token incomingToken) {
@@ -94,6 +176,9 @@ public class MicroPascal {
         
         if(!currToken.getText().endsWith("("))
             ThrowError(currToken, "IfStatement", "(");
+        
+        currToken = tokensQueue.remove();
+        CheckReservedWords(currToken);
     }
     
     static void ForLoop(Queue<Token> tokensQueue, Token incomingToken) {
@@ -174,8 +259,18 @@ public class MicroPascal {
     
     static void Write(Queue<Token> tokensQueue, Token incomingToken) {
         Token currToken = tokensQueue.remove();
+        if(currToken.getText().equals(";")) {
+            if (incomingToken.getText().equals("writeln")) {
+                System.out.println();
+            }
+            
+            Parse(tokensQueue);
+            return;
+        }
+            
         if (!currToken.getText().equals("(")) {
             ThrowError(currToken, "Write", "(");
+            
         }
 
         currToken = tokensQueue.remove();
@@ -185,7 +280,7 @@ public class MicroPascal {
             print = "";
 
             currToken = tokensQueue.remove();
-            if (!currToken.getText().endsWith(";")) {
+            if (!currToken.getText().equals(";")) {
                 ThrowError(currToken, "Write", ";");
             }
 
@@ -196,7 +291,7 @@ public class MicroPascal {
             }
 
             return;
-        } else if (CheckInt(currToken)) {
+        } else if (CheckNumeric(currToken)) {
             print = currToken.getText();
         } else if (currToken.getText().charAt(0) == '\'') {
             StringBuilder currString = new StringBuilder(currToken.getText());
@@ -214,12 +309,12 @@ public class MicroPascal {
         }
 
         currToken = tokensQueue.remove();
-        if (!currToken.getText().endsWith(")")) {
+        if (!currToken.getText().equals(")")) {
             ThrowError(currToken, "Write", ")");
         }
 
         currToken = tokensQueue.remove();
-        if (!currToken.getText().endsWith(";")) {
+        if (!currToken.getText().equals(";")) {
             ThrowError(currToken, "Write", ";");
         }
 
@@ -234,7 +329,7 @@ public class MicroPascal {
     
     static void checkHeader(Queue<Token> tokensQueue) {
         Token currToken = tokensQueue.remove();
-        if(currToken.getText().equals("program"))
+        if(currToken.getText().equals("program"))   
         {
             currToken = tokensQueue.remove();
             CheckReservedWords(currToken);
@@ -242,6 +337,9 @@ public class MicroPascal {
             if(!currToken.getText().equals(";"))
                 ThrowError(currToken, ";");
             
+            checkHeader(tokensQueue);
+        } else if (currToken.getText().equals("var")) {
+            VariableAssignments(tokensQueue);
             checkHeader(tokensQueue);
         } else if (currToken.getText().equals("begin")) {
             Parse(tokensQueue);
@@ -263,6 +361,17 @@ public class MicroPascal {
     static void ThrowError(Token token, String function, String expected) {
         System.out.println("syntax error at line " + token.getLine() + " in funcion " + function + " expected '" + expected + "' found '" + token.getText() + "'");
         System.exit(0);
+    }
+    
+    static void CheckType(Token token) {
+        List dataTypes = new ArrayList<String>();
+        dataTypes.add("char");
+        dataTypes.add("integer");
+        dataTypes.add("boolean");
+        dataTypes.add("string");
+        
+        if(!dataTypes.contains(token.getText()))
+            ThrowError(token);
     }
     
     static void CheckReservedWords(Token token) {
@@ -379,6 +488,10 @@ public class MicroPascal {
     
     static boolean CheckInt(Token token) {
         return token.getText().matches("\\-?\\d+");  //match a number with optional '-' and decimal.
+    }
+    
+    static boolean CheckNumeric(Token token) {
+        return token.getText().matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
     }
     
     static Queue<Token> ConcatenateQueue(Queue<Token> newQueue, Queue<Token> oldQueue) {

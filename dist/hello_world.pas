@@ -1,5 +1,8 @@
 program helloworld;
 
+var
+x : integer = 2;
+
 begin
     for i := 1 to 6 do
     begin
@@ -15,5 +18,5 @@ begin
     write('o');
     write('r');
     write('l');
-    write(d);
+    write('d');
 end.
