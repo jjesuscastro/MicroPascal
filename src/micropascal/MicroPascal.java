@@ -55,6 +55,10 @@ public class MicroPascal {
         public void setType(String type) {
             this.type = type;
         }
+        
+        public String toString() {
+            return "Variable: " + "name: " + name + " type: " + type + " value: " + value;
+        }
     }
     
     public static void main(String[] args) {
@@ -150,6 +154,8 @@ public class MicroPascal {
             ThrowError(currToken, ":=");
         
         currToken = tokensQueue.remove();
+        System.out.println(variable.toString());
+        System.out.println("currToken = " + currToken.getText());
         if(variable.getType().equals("integer")) {
             if(!CheckInt(currToken))
                 ThrowError(currToken);
@@ -188,6 +194,8 @@ public class MicroPascal {
             currToken = tokensQueue.remove();
             CheckReservedWords(currToken);
             name = currToken.getText();
+            variables.add(new Variable(name, type, value));
+            Variable variable = GetVariableByName(currToken);
             
             currToken = tokensQueue.remove();
             if(!currToken.getText().equals(":"))
@@ -195,12 +203,31 @@ public class MicroPascal {
             
             currToken = tokensQueue.remove();
             CheckType(currToken);
-            type = currToken.getText();
+            variable.setType(currToken.getText());
             
             currToken = tokensQueue.remove();
             if(currToken.getText().equals("=")) {
                 currToken = tokensQueue.remove();
                 value = currToken.getText();
+                
+                if(variable.getType().equals("integer")) {
+                    if(!CheckInt(currToken))
+                        ThrowError(currToken);
+                    else
+                        variable.setValue(value);
+                } else if (variable.getType().equals("boolean")) {
+                    if(value.equals("true") || value.equals("false"))
+                        System.out.println("not nice");
+                    else
+                        variable.setValue(value);
+                } else if (variable.getType().equals("char")) {
+                    if(!CheckChar(currToken))
+                        ThrowError(currToken);
+                    else
+                        variable.setValue(value);
+                } else {
+                    variable.setValue(value);
+                }
                 
                 currToken = tokensQueue.remove();
                 if(currToken.getText().equals(";")) {
@@ -213,8 +240,6 @@ public class MicroPascal {
             } else {
                 ThrowError(currToken, "VariableAssignment", ";");
             }
-            
-            variables.add(new Variable(name, type, value));
         }
     }
     
@@ -345,7 +370,7 @@ public class MicroPascal {
             print = currToken.getText();
         } else if(CheckVariable(currToken)){
             Variable variable = GetVariableByName(currToken);
-            if(variable.getType().equals("string")) {
+            if(variable.getType().equals("string") || variable.getType().equals("char")) {
                 StringBuilder printValue = new StringBuilder(variable.getValue());
                 printValue.deleteCharAt(0);
                 printValue.deleteCharAt(printValue.length()-1);
@@ -570,8 +595,10 @@ public class MicroPascal {
     }
     
     static boolean CheckChar(Token token) {
-        return token.getText().matches("[a-zA-Z_0-9 ]+!@#$%^&*()_=-[]{}\\|;':\",./<>?"); 
-        
+        StringBuilder tempString = new StringBuilder(token.getText());
+        tempString.deleteCharAt(0);
+        tempString.deleteCharAt(tempString.length()-1);
+        return tempString.toString().matches("[a-zA-Z_0-9 !@#$%^&*()_+=-{}|\\:;\'\",./<>?]?");        
     }
     
     static boolean CheckInt(Token token) {

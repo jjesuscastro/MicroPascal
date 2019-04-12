@@ -1,7 +1,7 @@
 program helloworld;
 
 var
-x : integer = 6;
+x : char = ']';
 
 begin
     for i := 1 to 6 do
