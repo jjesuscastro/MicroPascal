@@ -1,7 +1,11 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * [CMPILER X22] Machine Project: MiniPascal
+ * Castro, Joesei Jesus G. 11531398
+ * De Guzman, Jersey Adelei C. 11544201
+ * Medina, Chelsey Anne ? 115
+ *
+ * References:
+ * pascal.g4 from https://github.com/antlr/grammars-v4
  */
 package micropascal;
 
@@ -16,12 +20,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import pascal.pascalLexer;
 
-/**
- *
- * @author jjoes
- */
 public class MicroPascal {
-    static List variables = new ArrayList<Variable>();
+    static List<Variable> variables = new ArrayList<Variable>();
     
     static class Variable {
         private String name = null, value = null, type = null;
@@ -58,11 +58,11 @@ public class MicroPascal {
     }
     
     public static void main(String[] args) {
-        List tokens = Tokenize(args[0]);
+        List<Token> tokens = Tokenize(args[0]);
         Queue<Token> tokensQueue = new LinkedList<>(tokens);
         
-        for(int i = 0; i < tokens.size(); i++)
-            System.out.println(((Token)tokens.get(i)).getText());
+//        for(int i = 0; i < tokens.size(); i++)
+//            System.out.println(((Token)tokens.get(i)).getText());
         
         /*
             0 :  name
@@ -117,7 +117,8 @@ public class MicroPascal {
         Trace(tokensQueue, currToken);
     }
     
-    static void Trace(Queue<Token> tokensQueue, Token currToken) {        
+    static void Trace(Queue<Token> tokensQueue, Token currToken) {
+//        System.out.println("currToken = " + currToken.getText());
         if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
             Write(tokensQueue, currToken);
         else if(currToken.getText().equals("readln"))
@@ -135,9 +136,45 @@ public class MicroPascal {
         }
         else {
             CheckReservedWords(currToken);
-            CheckVariable(currToken);
-            
+            if(!CheckVariable(currToken))
+                ThrowUndeclaredError(currToken);
+            VariableAssignments(tokensQueue, currToken);
         }
+    }
+    
+    static void VariableAssignments(Queue<Token> tokensQueue, Token incomingToken) {
+        Variable variable = GetVariableByName(incomingToken);
+        
+        Token currToken = tokensQueue.remove();
+        if(!currToken.getText().equals(":="))
+            ThrowError(currToken, ":=");
+        
+        currToken = tokensQueue.remove();
+        if(variable.getType().equals("integer")) {
+            if(!CheckInt(currToken))
+                ThrowError(currToken);
+            else
+                variable.setValue(currToken.getText());
+        } else if (variable.getType().equals("boolean")) {
+            if(currToken.getText().equals("true") || currToken.getText().equals("false"))
+                System.out.println("not nice");
+            else
+                variable.setValue(currToken.getText());
+        } else if (variable.getType().equals("char")) {
+            if(!CheckChar(currToken))
+                ThrowError(currToken);
+            else
+                variable.setValue(currToken.getText());
+        } else {
+            variable.setValue(currToken.getText());
+        }
+        
+        currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals(";"))
+            ThrowError(currToken, ";");
+            
+        Parse(tokensQueue);
     }
     
     static void VariableAssignments(Queue<Token> tokensQueue) {
@@ -167,7 +204,7 @@ public class MicroPascal {
                 
                 currToken = tokensQueue.remove();
                 if(currToken.getText().equals(";")) {
-                    continue;
+                    // do nothing
                 } else {
                     ThrowError(currToken, "VariableAssignment", ";");
                 }
@@ -268,6 +305,7 @@ public class MicroPascal {
     }
     
     static void Write(Queue<Token> tokensQueue, Token incomingToken) {
+//        System.out.println("Entered write function");
         Token currToken = tokensQueue.remove();
         if(currToken.getText().equals(";")) {
             if (incomingToken.getText().equals("writeln")) {
@@ -285,6 +323,8 @@ public class MicroPascal {
 
         currToken = tokensQueue.remove();
         String print = null;
+        
+//        System.out.println("currToken = " + currToken.getText());
 
         if (currToken.getText().equals(")")) {
             print = "";
@@ -303,7 +343,17 @@ public class MicroPascal {
             return;
         } else if (CheckNumeric(currToken)) {
             print = currToken.getText();
-        } else if (currToken.getText().charAt(0) == '\'') {
+        } else if(CheckVariable(currToken)){
+            Variable variable = GetVariableByName(currToken);
+            if(variable.getType().equals("string")) {
+                StringBuilder printValue = new StringBuilder(variable.getValue());
+                printValue.deleteCharAt(0);
+                printValue.deleteCharAt(printValue.length()-1);
+                print = printValue.toString();
+            } else {
+            print = variable.getValue();
+            }
+        }else if (currToken.getText().charAt(0) == '\'') {
             StringBuilder currString = new StringBuilder(currToken.getText());
 
             if (currString.charAt(currString.length() - 1) != '\'') {
@@ -374,19 +424,26 @@ public class MicroPascal {
     }
     
     static void ThrowUndeclaredError(Token token) {
-        System.out.println("undeclared variable " + token.getText());
+        System.out.println("undeclared variable " + token.getText() + " at line " + token.getLine());
         System.exit(0);
     }
     
-    static void CheckVariable(Token token) {
-        boolean hasMatch = false;
+    static Variable GetVariableByName(Token token) {
         for(int i = 0; i < variables.size(); i++) {
             if(((Variable)variables.get(i)).getName().equals(token.getText()))
-                hasMatch = true;
+                return variables.get(i);
         }
         
-        if(!hasMatch)
-            ThrowUndeclaredError(token);
+        return null;
+    }
+    
+    static boolean CheckVariable(Token token) {
+        for(int i = 0; i < variables.size(); i++) {
+            if(((Variable)variables.get(i)).getName().equalsIgnoreCase(token.getText()))
+                return true;
+        }
+        
+        return false;
     }
     
     static void CheckType(Token token) {
@@ -510,6 +567,11 @@ public class MicroPascal {
         
         if(reservedWords.contains(token.getText()))
             ThrowError(token);
+    }
+    
+    static boolean CheckChar(Token token) {
+        return token.getText().matches("[a-zA-Z_0-9 ]+!@#$%^&*()_=-[]{}\\|;':\",./<>?"); 
+        
     }
     
     static boolean CheckInt(Token token) {

@@ -1,20 +1,19 @@
 program helloworld;
 
 var
-x : integer;
+x : integer = 6;
 
 begin
-    a;
     for i := 1 to 6 do
     begin
         writeln('hi');
     end;
-    write(2);
+    writeln(x);
     write('H');
     write('e');
     write('ll');
-    write(' ');
     write('o');
+    write(' ');
     write('W');
     write('o');
     write('r');
