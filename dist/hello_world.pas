@@ -8,7 +8,7 @@ begin
     begin
         writeln('hi');
     end;
-    writeln(x);
+    readln(x);
     write('H');
     write('e');
     write('ll');

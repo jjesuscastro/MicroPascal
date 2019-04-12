@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Scanner;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -126,7 +127,7 @@ public class MicroPascal {
         if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
             Write(tokensQueue, currToken);
         else if(currToken.getText().equals("readln"))
-            System.out.println("call readln function");
+            Read(tokensQueue);
         else if(currToken.getText().equals("for"))
             ForLoop(tokensQueue, currToken);
         else if(currToken.getText().equals("if"))
@@ -199,7 +200,7 @@ public class MicroPascal {
             
             currToken = tokensQueue.remove();
             if(!currToken.getText().equals(":"))
-                ThrowError(currToken, "VariableAssignment", ":");
+                ThrowError(currToken, ":");
             
             currToken = tokensQueue.remove();
             CheckType(currToken);
@@ -233,12 +234,12 @@ public class MicroPascal {
                 if(currToken.getText().equals(";")) {
                     // do nothing
                 } else {
-                    ThrowError(currToken, "VariableAssignment", ";");
+                    ThrowError(currToken, ";");
                 }
             } else if(currToken.getText().equals(";")) {
                 //do nothing
             } else {
-                ThrowError(currToken, "VariableAssignment", ";");
+                ThrowError(currToken, ";");
             }
         }
     }
@@ -247,7 +248,7 @@ public class MicroPascal {
         Token currToken = tokensQueue.remove();
         
         if(!currToken.getText().endsWith("("))
-            ThrowError(currToken, "IfStatement", "(");
+            ThrowError(currToken, "(");
         
         currToken = tokensQueue.remove();
         CheckReservedWords(currToken);
@@ -261,7 +262,7 @@ public class MicroPascal {
         currToken = tokensQueue.remove();
         
         if(!currToken.getText().equals(":="))
-            ThrowError(currToken, "ForLoop", ":=");
+            ThrowError(currToken, ":=");
         
         currToken = tokensQueue.remove();
         
@@ -273,14 +274,14 @@ public class MicroPascal {
         
         int startValue = Integer.MAX_VALUE;
         if(!CheckInt(currToken))
-            ThrowError(currToken, "ForLoop", "integer");
+            ThrowError(currToken, "integer");
         else
             startValue = isStartNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
         
         currToken = tokensQueue.remove();
         
         if(!currToken.getText().equals("to"))
-            ThrowError(currToken, "ForLoop", "to");
+            ThrowError(currToken, "to");
         
         currToken = tokensQueue.remove();
         
@@ -292,13 +293,13 @@ public class MicroPascal {
         
         int endValue = Integer.MAX_VALUE;
         if(!CheckInt(currToken))
-            ThrowError(currToken, "ForLoop", "integer");
+            ThrowError(currToken, "integer");
         else
             endValue = isEndNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals("do"))
-            ThrowError(currToken, "ForLoop", "do");
+            ThrowError(currToken, "do");
         
         Queue<Token> tempQueue = new LinkedList<>();
         currToken = tokensQueue.remove();
@@ -308,7 +309,7 @@ public class MicroPascal {
             }
         }
         else {
-            ThrowError(currToken, "ForLoop", "begin");
+            ThrowError(currToken, "begin");
         }
         
         Queue<Token> loopQueue = new LinkedList<>();
@@ -320,13 +321,56 @@ public class MicroPascal {
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals("end"))
-            ThrowError(currToken, "ForLoop", "end");
+            ThrowError(currToken, "end");
         
         currToken = tokensQueue.remove();
         if(!currToken.getText().equals(";"))
-            ThrowError(currToken, "ForLoop", ";");
+            ThrowError(currToken, ";");
         
         Parse(ConcatenateQueue(loopQueue, tokensQueue));
+    }
+    
+    static void Read(Queue<Token> tokensQueue) {
+        Token currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals("("))
+            ThrowError(currToken, "(");
+        
+        currToken = tokensQueue.remove();
+        
+        if(!CheckVariable(currToken))
+            ThrowUndeclaredError(currToken);
+        
+        Variable variable = GetVariableByName(currToken);
+        Scanner scanner = new Scanner(System.in);
+        if(variable.getType().equals("integer")) {
+            int tempInt = scanner.nextInt();
+            variable.setValue(String.valueOf(tempInt));
+        } else if(variable.getType().equals("char")) {
+            StringBuilder tempString = new StringBuilder(scanner.next());
+            if(tempString.length() > 1)
+                ThrowInvalidInputError(variable);
+            tempString.insert(0, '\'');
+            tempString.append('\'');
+            variable.setValue(tempString.toString());
+        } else if(variable.getType().equals("boolean")) {
+            boolean tempBoolean = scanner.nextBoolean();
+            variable.setValue(String.valueOf(tempBoolean));
+        } else {
+            variable.setValue(scanner.nextLine());
+        }
+        
+        currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals(")"))
+            ThrowError(currToken, ")");
+        
+        currToken = tokensQueue.remove();
+        
+        if(!currToken.getText().equals(";"))
+            ThrowError(currToken, ";");
+        
+        Parse(tokensQueue);
     }
     
     static void Write(Queue<Token> tokensQueue, Token incomingToken) {
@@ -342,7 +386,7 @@ public class MicroPascal {
         }
             
         if (!currToken.getText().equals("(")) {
-            ThrowError(currToken, "Write", "(");
+            ThrowError(currToken, "(");
             
         }
 
@@ -356,7 +400,7 @@ public class MicroPascal {
 
             currToken = tokensQueue.remove();
             if (!currToken.getText().equals(";")) {
-                ThrowError(currToken, "Write", ";");
+                ThrowError(currToken, ";");
             }
 
             System.out.print(print);
@@ -390,17 +434,17 @@ public class MicroPascal {
 
             print = currString.toString();
         } else {
-            ThrowError(currToken, "Write", ")");
+            ThrowError(currToken, ")");
         }
 
         currToken = tokensQueue.remove();
         if (!currToken.getText().equals(")")) {
-            ThrowError(currToken, "Write", ")");
+            ThrowError(currToken, ")");
         }
 
         currToken = tokensQueue.remove();
         if (!currToken.getText().equals(";")) {
-            ThrowError(currToken, "Write", ";");
+            ThrowError(currToken, ";");
         }
 
         System.out.print(print);
@@ -431,6 +475,148 @@ public class MicroPascal {
         } else {
             ThrowError(currToken,"begin");
         }
+    }
+    
+//static class Function{
+//        private String name = null, variable = null, type = null, returnType = null;
+//        
+//        public Function(String name, String variable, String type, String returnType) {
+//            this.name = name;
+//            this.variable = variable; //PWEDENG ACCESS THE VAR ARRAY HERE?
+//            this.type = type;	//BUT IDK HOW?
+//            this.value = returnType;
+//        }
+//
+//        public String getName() {
+//            return name;
+//        }
+//
+//        public void setName(String name) {
+//            this.name = name;
+//        }
+//
+//    public String getReturnType() {
+//                return returnType;
+//            }
+//
+//            public void setReturnType(String returnType) {
+//                this.returnType = return Type;
+//            }
+//
+//            //ADD GET AND SET IF CONFIRMED
+//    }
+//
+//
+//
+//    //if checked reserved word if "Function"
+//
+//    /* STRUCTURE OF FUNCTIONS
+//    function <name>[( variable:type ;varlist ) ]:<return_type>;
+//    [<variable declaration>]
+//    begin
+//       <statements>
+//    end;
+//    */
+//
+//    Token funcName = tokensQueue.remove(); //GET NAME
+//
+//    static List function = new ArrayList<Function>(); //CREATE FUNC LIST MAKE THIS GLOBAL?
+//
+//    static void FunctionAssignments(Queue<Token> tokensQueue) {
+//            Token currToken;
+//            String name, variable, type, returnType;
+//
+//            while(!tokensQueue.peek().getText().equals("begin")) {
+//                name = null;
+//                variable = null;
+//                type = null;
+//                returnType = null;
+//
+//                currToken = tokensQueue.remove();
+//                CheckReservedWords(currToken);
+//                name = currToken.getText();
+//
+//                currToken = tokensQueue.remove();
+//                if(!currToken.getText().equals("(")){ 
+//                    ThrowError(currToken, "(");
+//
+//                currToken = tokensQueue.remove();
+//
+//            while(!variables.get(i)){ 			//WHILE MERON PANG VARIABLES
+//                            CheckVariable(currToken);
+//                                             //SUPPOSED TO BE AN ARRAY OF VARIABLES 
+//                                                            //IF MULTIPLE VARIABLES NA INTEGER, DISPLAY WITH COMMAS 
+//
+//                            currToken = tokensQueue.remove();
+//                     }
+//                 }else
+//                    if(currToken.getText().equals(":")) {
+//                    currToken = tokensQueue.remove();
+//                    type = currToken.getText();
+//
+//                    currToken = tokensQueue.remove();
+//
+//            if(currToken.getText().equals(")")) {
+//                        currToken = tokensQueue.remove();
+//                    //MOVE ON TO RETURNTYPE
+//                    If(currToken.getText().equals(":")){
+//                            currToken = tokensQueue.remove();
+//                             returnType = currToken.getText();
+//                            currToken = tokensQueue.remove();
+//                            If(currToken.getText().equals(";")){
+//                                    currToken = tokensQueue.remove();
+//                            }else
+//                                    ThrowError(currToken, "VariableAssignment", ";");	//END OF FUNCTION DECLARATION
+//                    }else
+//                            ThrowError(currToken,"VariableAssignment", ":");
+//                    } else {
+//                        ThrowError(currToken, ")");
+//                    }
+//                    }
+//
+//
+//               function.add(new Function(name, variable, type, returnType)) //ADD TOKEN TO FUNC LIST 
+//            }
+//
+//            if(currToken.getText().equals("begin")) {
+//
+//                } 
+//        }
+//
+//    static void CheckFunction(Token token) { //CHECK IF TOKEN IS A FUNCTION 
+//            boolean hasMatch = false;
+//            for(int i = 0; i < function.size(); i++) {
+//                if(((Function)function.get(i)).getName().equals(token.getText()))
+//                    hasMatch = true;
+//            }
+//
+//            if(!hasMatch)
+//                ThrowUndeclaredError(token);
+//    }
+    
+//    static void Comment(Queue<Token> tokensQueue){
+//        Token currToken = tokensQueue.remove();
+//        StringBuilder currString = new StringBuilder(currToken.getText());
+//        
+//        if(currString.charAt(0) == '{'){
+//            currToken = tokensQueue.remove();
+//            
+//            if(currString.charAt(currString.length()-1) != '}')
+//                ThrowError(currToken, "Comment", "Not a Comment");
+//            
+//            else{
+//                while(currString.charAt(currString.length()-1) != '}'){
+//                    currToken = tokensQueue.remove();
+//                }
+//            }  
+//        }
+//        else
+//            ThrowError(currToken, "Comment", "Not a Comment");
+//    }
+    
+    static void ThrowInvalidInputError(Variable variable) {
+        System.out.println("invalid input expected " + variable.getType());
+        System.exit(0);
     }
     
     static void ThrowError(Token token) {
