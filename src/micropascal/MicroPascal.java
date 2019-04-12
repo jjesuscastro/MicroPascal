@@ -126,6 +126,18 @@ public class MicroPascal {
             ForLoop(tokensQueue, currToken);
         else if(currToken.getText().equals("if"))
             IfStatement(tokensQueue, currToken);
+        else if(currToken.getText().equals("end")) {
+            currToken = tokensQueue.remove();
+            if(!currToken.getText().equals("."))
+                ThrowError(currToken, ".");
+            else
+                System.exit(0);
+        }
+        else {
+            CheckReservedWords(currToken);
+            CheckVariable(currToken);
+            
+        }
     }
     
     static void VariableAssignments(Queue<Token> tokensQueue) {
@@ -153,8 +165,6 @@ public class MicroPascal {
                 currToken = tokensQueue.remove();
                 value = currToken.getText();
                 
-                System.out.println("currToken = " + currToken.getText());
-                
                 currToken = tokensQueue.remove();
                 if(currToken.getText().equals(";")) {
                     continue;
@@ -162,7 +172,7 @@ public class MicroPascal {
                     ThrowError(currToken, "VariableAssignment", ";");
                 }
             } else if(currToken.getText().equals(";")) {
-                continue;
+                //do nothing
             } else {
                 ThrowError(currToken, "VariableAssignment", ";");
             }
@@ -361,6 +371,22 @@ public class MicroPascal {
     static void ThrowError(Token token, String function, String expected) {
         System.out.println("syntax error at line " + token.getLine() + " in funcion " + function + " expected '" + expected + "' found '" + token.getText() + "'");
         System.exit(0);
+    }
+    
+    static void ThrowUndeclaredError(Token token) {
+        System.out.println("undeclared variable " + token.getText());
+        System.exit(0);
+    }
+    
+    static void CheckVariable(Token token) {
+        boolean hasMatch = false;
+        for(int i = 0; i < variables.size(); i++) {
+            if(((Variable)variables.get(i)).getName().equals(token.getText()))
+                hasMatch = true;
+        }
+        
+        if(!hasMatch)
+            ThrowUndeclaredError(token);
     }
     
     static void CheckType(Token token) {

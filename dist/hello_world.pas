@@ -1,9 +1,10 @@
 program helloworld;
 
 var
-x : integer = 2;
+x : integer;
 
 begin
+    a;
     for i := 1 to 6 do
     begin
         writeln('hi');
