@@ -2,10 +2,17 @@
  * [CMPILER X22] Machine Project: MiniPascal
  * Castro, Joesei Jesus G. 11531398
  * De Guzman, Jersey Adelei C. 11544201
- * Medina, Chelsey Anne ? 115
+ * Medina, Chelsey Anne D. 11546115
  *
  * References:
  * pascal.g4 from https://github.com/antlr/grammars-v4
+ * Java Scanner https://www.w3schools.com/java/java_user_input.asp
+ * Java StringBuilder https://stackoverflow.com/questions/5931261/java-use-stringbuilder-to-insert-at-the-beginning
+ * Onlined GDB https://www.onlinegdb.com/
+ * Pascal comments https://stackoverflow.com/questions/3842443/are-pascal-comments-supposed-to-nest
+ * Regular expressions https://stackoverflow.com/questions/928072/whats-the-regular-expression-that-matches-a-square-bracket
+ * Java Clone() protected error https://www.javabrahman.com/error-handling/java-resolve-compiler-error-clone-protected-access-java-lang-object/
+ * Pascal variable types https://www.tutorialspoint.com/pascal/pascal_variable_types.htm
  */
 package micropascal;
 
@@ -124,17 +131,17 @@ public class MicroPascal {
     
     static void Trace(Queue<Token> tokensQueue, Token currToken) {
 //        System.out.println("currToken = " + currToken.getText());
-        if(currToken.getText().equals("write") || currToken.getText().equals("writeln"))
+        if(currToken.getText().equalsIgnoreCase("write") || currToken.getText().equalsIgnoreCase("writeln"))
             Write(tokensQueue, currToken);
-        else if(currToken.getText().equals("readln"))
+        else if(currToken.getText().equalsIgnoreCase("readln"))
             Read(tokensQueue);
-        else if(currToken.getText().equals("for"))
+        else if(currToken.getText().equalsIgnoreCase("for"))
             ForLoop(tokensQueue, currToken);
-        else if(currToken.getText().equals("if"))
+        else if(currToken.getText().equalsIgnoreCase("if"))
             IfStatement(tokensQueue, currToken);
-        else if(currToken.getText().equals("end")) {
+        else if(currToken.getText().equalsIgnoreCase("end")) {
             currToken = tokensQueue.remove();
-            if(!currToken.getText().equals("."))
+            if(!currToken.getText().equalsIgnoreCase("."))
                 ThrowError(currToken, ".");
             else
                 System.exit(0);
@@ -151,23 +158,23 @@ public class MicroPascal {
         Variable variable = GetVariableByName(incomingToken);
         
         Token currToken = tokensQueue.remove();
-        if(!currToken.getText().equals(":="))
+        if(!currToken.getText().equalsIgnoreCase(":="))
             ThrowError(currToken, ":=");
         
         currToken = tokensQueue.remove();
         System.out.println(variable.toString());
         System.out.println("currToken = " + currToken.getText());
-        if(variable.getType().equals("integer")) {
+        if(variable.getType().equalsIgnoreCase("integer")) {
             if(!CheckInt(currToken))
                 ThrowError(currToken);
             else
                 variable.setValue(currToken.getText());
-        } else if (variable.getType().equals("boolean")) {
-            if(currToken.getText().equals("true") || currToken.getText().equals("false"))
+        } else if (variable.getType().equalsIgnoreCase("boolean")) {
+            if(currToken.getText().equalsIgnoreCase("true") || currToken.getText().equalsIgnoreCase("false"))
                 System.out.println("not nice");
             else
                 variable.setValue(currToken.getText());
-        } else if (variable.getType().equals("char")) {
+        } else if (variable.getType().equalsIgnoreCase("char")) {
             if(!CheckChar(currToken))
                 ThrowError(currToken);
             else
@@ -178,7 +185,7 @@ public class MicroPascal {
         
         currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals(";"))
+        if(!currToken.getText().equalsIgnoreCase(";"))
             ThrowError(currToken, ";");
             
         Parse(tokensQueue);
@@ -187,7 +194,7 @@ public class MicroPascal {
     static void VariableAssignments(Queue<Token> tokensQueue) {
         Token currToken;
         String name, value, type;
-        while(!tokensQueue.peek().getText().equals("begin")) {
+        while(!tokensQueue.peek().getText().equalsIgnoreCase("begin")) {
             name = null;
             value = null;
             type = null;
@@ -199,7 +206,7 @@ public class MicroPascal {
             Variable variable = GetVariableByName(currToken);
             
             currToken = tokensQueue.remove();
-            if(!currToken.getText().equals(":"))
+            if(!currToken.getText().equalsIgnoreCase(":"))
                 ThrowError(currToken, ":");
             
             currToken = tokensQueue.remove();
@@ -207,21 +214,21 @@ public class MicroPascal {
             variable.setType(currToken.getText());
             
             currToken = tokensQueue.remove();
-            if(currToken.getText().equals("=")) {
+            if(currToken.getText().equalsIgnoreCase("=")) {
                 currToken = tokensQueue.remove();
                 value = currToken.getText();
                 
-                if(variable.getType().equals("integer")) {
+                if(variable.getType().equalsIgnoreCase("integer")) {
                     if(!CheckInt(currToken))
                         ThrowError(currToken);
                     else
                         variable.setValue(value);
-                } else if (variable.getType().equals("boolean")) {
-                    if(value.equals("true") || value.equals("false"))
-                        System.out.println("not nice");
-                    else
+                } else if (variable.getType().equalsIgnoreCase("boolean")) {
+                    if(value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false"))
                         variable.setValue(value);
-                } else if (variable.getType().equals("char")) {
+                    else
+                        ThrowInvalidInputError(variable);
+                } else if (variable.getType().equalsIgnoreCase("char")) {
                     if(!CheckChar(currToken))
                         ThrowError(currToken);
                     else
@@ -231,12 +238,12 @@ public class MicroPascal {
                 }
                 
                 currToken = tokensQueue.remove();
-                if(currToken.getText().equals(";")) {
+                if(currToken.getText().equalsIgnoreCase(";")) {
                     // do nothing
                 } else {
                     ThrowError(currToken, ";");
                 }
-            } else if(currToken.getText().equals(";")) {
+            } else if(currToken.getText().equalsIgnoreCase(";")) {
                 //do nothing
             } else {
                 ThrowError(currToken, ";");
@@ -258,16 +265,20 @@ public class MicroPascal {
         Token currToken = tokensQueue.remove();
         
         CheckReservedWords(currToken); //The token after "for" should be an identifier and therefor should not be a reserved word.
+        if(!CheckVariable(currToken))
+            ThrowUndeclaredError(currToken);
+        
+        Variable variable = GetVariableByName(currToken);
         
         currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals(":="))
+        if(!currToken.getText().equalsIgnoreCase(":="))
             ThrowError(currToken, ":=");
         
         currToken = tokensQueue.remove();
         
         boolean isStartNegative = false;
-        if(currToken.getText().equals("-")) {
+        if(currToken.getText().equalsIgnoreCase("-")) {
             isStartNegative = true;
             currToken = tokensQueue.remove();
         }
@@ -280,13 +291,13 @@ public class MicroPascal {
         
         currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals("to"))
+        if(!currToken.getText().equalsIgnoreCase("to"))
             ThrowError(currToken, "to");
         
         currToken = tokensQueue.remove();
         
         boolean isEndNegative = false;
-        if(currToken.getText().equals("-")) {
+        if(currToken.getText().equalsIgnoreCase("-")) {
             isEndNegative = true;
             currToken = tokensQueue.remove();
         }
@@ -298,13 +309,13 @@ public class MicroPascal {
             endValue = isEndNegative ? -1 * Integer.parseInt(currToken.getText()) : Integer.parseInt(currToken.getText());
         
         currToken = tokensQueue.remove();
-        if(!currToken.getText().equals("do"))
+        if(!currToken.getText().equalsIgnoreCase("do"))
             ThrowError(currToken, "do");
         
         Queue<Token> tempQueue = new LinkedList<>();
         currToken = tokensQueue.remove();
-        if(currToken.getText().equals("begin")) {
-            while(!tokensQueue.peek().getText().equals("end")) {
+        if(currToken.getText().equalsIgnoreCase("begin")) {
+            while(!tokensQueue.peek().getText().equalsIgnoreCase("end")) {
                 tempQueue.add(tokensQueue.remove());
             }
         }
@@ -320,12 +331,14 @@ public class MicroPascal {
         }
         
         currToken = tokensQueue.remove();
-        if(!currToken.getText().equals("end"))
+        if(!currToken.getText().equalsIgnoreCase("end"))
             ThrowError(currToken, "end");
         
         currToken = tokensQueue.remove();
-        if(!currToken.getText().equals(";"))
+        if(!currToken.getText().equalsIgnoreCase(";"))
             ThrowError(currToken, ";");
+        
+        variable.setValue(String.valueOf(endValue));
         
         Parse(ConcatenateQueue(loopQueue, tokensQueue));
     }
@@ -333,7 +346,7 @@ public class MicroPascal {
     static void Read(Queue<Token> tokensQueue) {
         Token currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals("("))
+        if(!currToken.getText().equalsIgnoreCase("("))
             ThrowError(currToken, "(");
         
         currToken = tokensQueue.remove();
@@ -343,31 +356,50 @@ public class MicroPascal {
         
         Variable variable = GetVariableByName(currToken);
         Scanner scanner = new Scanner(System.in);
-        if(variable.getType().equals("integer")) {
-            int tempInt = scanner.nextInt();
+        if(variable.getType().equalsIgnoreCase("integer")) {
+            int tempInt = 0;
+            try {
+                tempInt = scanner.nextInt();
+            } catch(Exception e) {
+                ThrowInvalidInputError(variable);
+            }
             variable.setValue(String.valueOf(tempInt));
-        } else if(variable.getType().equals("char")) {
-            StringBuilder tempString = new StringBuilder(scanner.next());
+        } else if(variable.getType().equalsIgnoreCase("char")) {
+            StringBuilder tempString = null;
+            try {
+                tempString = new StringBuilder(scanner.next());
+            } catch(Exception e) {
+                ThrowInvalidInputError(variable);
+            }
             if(tempString.length() > 1)
                 ThrowInvalidInputError(variable);
             tempString.insert(0, '\'');
             tempString.append('\'');
             variable.setValue(tempString.toString());
-        } else if(variable.getType().equals("boolean")) {
-            boolean tempBoolean = scanner.nextBoolean();
+        } else if(variable.getType().equalsIgnoreCase("boolean")) {
+            boolean tempBoolean = false;
+            try {
+                tempBoolean = scanner.nextBoolean();
+            } catch(Exception e) {
+                ThrowInvalidInputError(variable);
+            }
             variable.setValue(String.valueOf(tempBoolean));
         } else {
-            variable.setValue(scanner.nextLine());
+            try {
+                variable.setValue(scanner.nextLine());
+            } catch(Exception e) {
+                ThrowInvalidInputError(variable);
+            }
         }
         
         currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals(")"))
+        if(!currToken.getText().equalsIgnoreCase(")"))
             ThrowError(currToken, ")");
         
         currToken = tokensQueue.remove();
         
-        if(!currToken.getText().equals(";"))
+        if(!currToken.getText().equalsIgnoreCase(";"))
             ThrowError(currToken, ";");
         
         Parse(tokensQueue);
@@ -376,8 +408,8 @@ public class MicroPascal {
     static void Write(Queue<Token> tokensQueue, Token incomingToken) {
 //        System.out.println("Entered write function");
         Token currToken = tokensQueue.remove();
-        if(currToken.getText().equals(";")) {
-            if (incomingToken.getText().equals("writeln")) {
+        if(currToken.getText().equalsIgnoreCase(";")) {
+            if (incomingToken.getText().equalsIgnoreCase("writeln")) {
                 System.out.println();
             }
             
@@ -385,7 +417,7 @@ public class MicroPascal {
             return;
         }
             
-        if (!currToken.getText().equals("(")) {
+        if (!currToken.getText().equalsIgnoreCase("(")) {
             ThrowError(currToken, "(");
             
         }
@@ -395,17 +427,17 @@ public class MicroPascal {
         
 //        System.out.println("currToken = " + currToken.getText());
 
-        if (currToken.getText().equals(")")) {
+        if (currToken.getText().equalsIgnoreCase(")")) {
             print = "";
 
             currToken = tokensQueue.remove();
-            if (!currToken.getText().equals(";")) {
+            if (!currToken.getText().equalsIgnoreCase(";")) {
                 ThrowError(currToken, ";");
             }
 
             System.out.print(print);
 
-            if (incomingToken.getText().equals("writeln")) {
+            if (incomingToken.getText().equalsIgnoreCase("writeln")) {
                 System.out.println();
             }
 
@@ -414,7 +446,7 @@ public class MicroPascal {
             print = currToken.getText();
         } else if(CheckVariable(currToken)){
             Variable variable = GetVariableByName(currToken);
-            if(variable.getType().equals("string") || variable.getType().equals("char")) {
+            if(variable.getType().equalsIgnoreCase("string") || variable.getType().equalsIgnoreCase("char")) {
                 StringBuilder printValue = new StringBuilder(variable.getValue());
                 printValue.deleteCharAt(0);
                 printValue.deleteCharAt(printValue.length()-1);
@@ -438,18 +470,18 @@ public class MicroPascal {
         }
 
         currToken = tokensQueue.remove();
-        if (!currToken.getText().equals(")")) {
+        if (!currToken.getText().equalsIgnoreCase(")")) {
             ThrowError(currToken, ")");
         }
 
         currToken = tokensQueue.remove();
-        if (!currToken.getText().equals(";")) {
+        if (!currToken.getText().equalsIgnoreCase(";")) {
             ThrowError(currToken, ";");
         }
 
         System.out.print(print);
 
-        if (incomingToken.getText().equals("writeln")) {
+        if (incomingToken.getText().equalsIgnoreCase("writeln")) {
             System.out.println();
         }
 
@@ -458,19 +490,19 @@ public class MicroPascal {
     
     static void checkHeader(Queue<Token> tokensQueue) {
         Token currToken = tokensQueue.remove();
-        if(currToken.getText().equals("program"))   
+        if(currToken.getText().equalsIgnoreCase("program"))   
         {
             currToken = tokensQueue.remove();
             CheckReservedWords(currToken);
             currToken = tokensQueue.remove();
-            if(!currToken.getText().equals(";"))
+            if(!currToken.getText().equalsIgnoreCase(";"))
                 ThrowError(currToken, ";");
             
             checkHeader(tokensQueue);
-        } else if (currToken.getText().equals("var")) {
+        } else if (currToken.getText().equalsIgnoreCase("var")) {
             VariableAssignments(tokensQueue);
             checkHeader(tokensQueue);
-        } else if (currToken.getText().equals("begin")) {
+        } else if (currToken.getText().equalsIgnoreCase("begin")) {
             Parse(tokensQueue);
         } else {
             ThrowError(currToken,"begin");
@@ -526,7 +558,7 @@ public class MicroPascal {
 //            Token currToken;
 //            String name, variable, type, returnType;
 //
-//            while(!tokensQueue.peek().getText().equals("begin")) {
+//            while(!tokensQueue.peek().getText().equalsIgnoreCase("begin")) {
 //                name = null;
 //                variable = null;
 //                type = null;
@@ -537,7 +569,7 @@ public class MicroPascal {
 //                name = currToken.getText();
 //
 //                currToken = tokensQueue.remove();
-//                if(!currToken.getText().equals("(")){ 
+//                if(!currToken.getText().equalsIgnoreCase("(")){ 
 //                    ThrowError(currToken, "(");
 //
 //                currToken = tokensQueue.remove();
@@ -550,20 +582,20 @@ public class MicroPascal {
 //                            currToken = tokensQueue.remove();
 //                     }
 //                 }else
-//                    if(currToken.getText().equals(":")) {
+//                    if(currToken.getText().equalsIgnoreCase(":")) {
 //                    currToken = tokensQueue.remove();
 //                    type = currToken.getText();
 //
 //                    currToken = tokensQueue.remove();
 //
-//            if(currToken.getText().equals(")")) {
+//            if(currToken.getText().equalsIgnoreCase(")")) {
 //                        currToken = tokensQueue.remove();
 //                    //MOVE ON TO RETURNTYPE
-//                    If(currToken.getText().equals(":")){
+//                    If(currToken.getText().equalsIgnoreCase(":")){
 //                            currToken = tokensQueue.remove();
 //                             returnType = currToken.getText();
 //                            currToken = tokensQueue.remove();
-//                            If(currToken.getText().equals(";")){
+//                            If(currToken.getText().equalsIgnoreCase(";")){
 //                                    currToken = tokensQueue.remove();
 //                            }else
 //                                    ThrowError(currToken, "VariableAssignment", ";");	//END OF FUNCTION DECLARATION
@@ -578,7 +610,7 @@ public class MicroPascal {
 //               function.add(new Function(name, variable, type, returnType)) //ADD TOKEN TO FUNC LIST 
 //            }
 //
-//            if(currToken.getText().equals("begin")) {
+//            if(currToken.getText().equalsIgnoreCase("begin")) {
 //
 //                } 
 //        }
@@ -586,7 +618,7 @@ public class MicroPascal {
 //    static void CheckFunction(Token token) { //CHECK IF TOKEN IS A FUNCTION 
 //            boolean hasMatch = false;
 //            for(int i = 0; i < function.size(); i++) {
-//                if(((Function)function.get(i)).getName().equals(token.getText()))
+//                if(((Function)function.get(i)).getName().equalsIgnoreCase(token.getText()))
 //                    hasMatch = true;
 //            }
 //
@@ -641,7 +673,7 @@ public class MicroPascal {
     
     static Variable GetVariableByName(Token token) {
         for(int i = 0; i < variables.size(); i++) {
-            if(((Variable)variables.get(i)).getName().equals(token.getText()))
+            if(((Variable)variables.get(i)).getName().equalsIgnoreCase(token.getText()))
                 return variables.get(i);
         }
         
